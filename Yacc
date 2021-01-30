@@ -1,0 +1,258 @@
+%{
+#include "proiect.h"
+#include <stdio.h>
+#include <string.h>
+extern FILE* yyin;
+extern char* yytext;
+extern int yylineno;
+extern int yylex (void);
+int yyerror(char * s);
+%}
+%nonassoc IFX
+%nonassoc ELSE
+%token start_decl end_decl INT CHAR FLOAT BOOL STRUCT CONST
+%token pls min ori slsh verf mod ASSIGN AND OR INCR NOT 
+%token sprnt dprnt sacoal dacoal pnct vir pnctvir
+%token start_instr end_instr IF WHILE ELSE FOR RETURN print
+%token EVAL
+%token STRCMP STRSTR STRLEN STRCAT
+
+%union {
+    int val; 
+    char val_ch; 
+    char *nume; 
+}
+
+%token <nume> ID
+%token <val> INTEGER_VAL
+%token <val> FLT_VAL
+%token <val> CHAR_VAL
+%token <val> BOOL_VAL
+%token <nume> vect
+%token <nume> matr
+
+%type <val> expr
+%type <val> expr3
+
+%left OR
+%left AND
+%left EQ NEQ LEQ GEQ GRE LES
+%left pls min
+%left ori mod slsh
+%start programul
+
+%%
+
+programul: declaratii instructiuni { 
+            printf("CORECT SINTACTIC!  "); 
+            decode_error(); 
+            if(error==0) {
+                print_var(); 
+                printf("%s",toPrint);
+            }
+        }
+        ;
+
+declaratii: start_decl declaratiile end_decl
+          | start_decl end_decl
+          ;
+
+declaratiile: concret_dec pnctvir
+    | fct_bloc
+    | struct_dec
+    | declaratiile  concret_dec pnctvir
+    | declaratiile struct_dec
+    | declaratiile fct_bloc
+	;
+
+struct_dec: struct struct_body struct_identif pnctvir {structVar--;}
+          ;
+
+struct: STRUCT ID {insert_struct($2,"global_struct"); structVar++;}
+      ;
+    
+struct_identif: ID {insert_var($1,0,"struct","struct_var");}
+             |vect 
+             |matr 
+             |struct_identif vir ID {insert_var($3,0,"struct","struct_var");}
+             |struct_identif vir vect {insert_var($3,0,"vector struct","struct_var");}
+             |struct_identif vir matr {insert_var($3,0,"matrice struct","struct_var");}
+             | 
+             ;
+    
+struct_body: sacoal declaratiile dacoal
+           ;
+    
+fct_bloc: fct_dec fct_body;
+
+fct_body: sacoal statements dacoal 
+        | pnctvir
+        ;
+
+fct_dec: fct sprnt arg_list dprnt  
+       ;
+
+fct: INT ID  {insert_f($2,"int","global_function");} 
+   | FLOAT ID {insert_f($2,"float","global_function");} 
+   | CHAR ID {insert_f($2,"char","global_function");} 
+   | BOOL ID {insert_f($2,"bool","global_function");} 
+   ;
+
+concret_dec: INT ID {insert_var($2,0,"int","global");} 
+        | INT ID ASSIGN INTEGER_VAL {insert_var($2,$4,"int","global");}
+        | FLOAT ID {insert_var($2,0,"float","global");}
+        | FLOAT ID ASSIGN FLT_VAL {insert_var($2,$4,"float","global");}
+        | CHAR ID {insert_var($2,0,"char","global");}
+        | CHAR ID ASSIGN CHAR_VAL {insert_var($2,$4,"char","global");}
+        | BOOL ID {insert_var($2,0,"bool","global");}
+        | BOOL ID ASSIGN BOOL_VAL {insert_var($2,$4,"bool","global");}
+        | INT matr {insert_var($2,0,"matrice int","global");}
+        | FLOAT matr {insert_var($2,0,"matrice float","global");}
+        | CHAR matr {insert_var($2,0,"matrice char","global");}
+        | BOOL matr {insert_var($2,0,"matrice bool","global");}
+        | INT vect {insert_var($2,0,"vector int","global");}
+        | FLOAT vect {insert_var($2,0,"vector float","global");}
+        | CHAR vect {insert_var($2,0,"vector char","global");}
+        | BOOL vect {insert_var($2,0,"vector bool","global");}
+	    ;
+
+    
+
+
+arg_list: INT ID {insert_var($2,0,"int","funct_arg");}
+        | FLOAT ID {insert_var($2,0,"float","funct_arg");}
+        | CHAR ID {insert_var($2,0,"char","funct_arg");}
+        | BOOL ID {insert_var($2,0,"bool","funct_arg");}
+        | INT matr {insert_var($2,0,"matrice int","funct_arg");}
+        | FLOAT matr {insert_var($2,0,"matrice float","funct_arg");}
+        | CHAR matr {insert_var($2,0,"matrice char","funct_arg");}
+        | BOOL matr {insert_var($2,0,"matrice bool","funct_arg");}
+        | INT vect {insert_var($2,0,"vector int","funct_arg");}
+        | FLOAT vect {insert_var($2,0,"vector float","funct_arg");}
+        | CHAR vect {insert_var($2,0,"vector char","funct_arg");}
+        | BOOL vect {insert_var($2,0,"vector bool","funct_arg");}
+        | arg_list vir INT ID {insert_var($4,0,"int","funct_arg");}
+        | arg_list vir FLOAT ID {insert_var($4,0,"float","funct_arg");}
+        | arg_list vir CHAR ID {insert_var($4,0,"char","funct_arg");}
+        | arg_list vir BOOL ID {insert_var($4,0,"bool","funct_arg");}
+        | arg_list vir INT matr {insert_var($4,0,"matrice int","funct_arg");}
+        | arg_list vir FLOAT matr {insert_var($4,0,"matrice float","funct_arg");}
+        | arg_list vir CHAR matr {insert_var($4,0,"matrice char","funct_arg");}
+        | arg_list vir BOOL matr {insert_var($4,0,"matrice bool","funct_arg");}
+        | arg_list vir INT vect {insert_var($4,0,"vector int","funct_arg");}
+        | arg_list vir FLOAT vect {insert_var($4,0,"vector float","funct_arg");}
+        | arg_list vir CHAR vect {insert_var($4,0,"vector char","funct_arg");}
+        | arg_list vir BOOL vect {insert_var($4,0,"vector bool","funct_arg");}
+        | 
+        ;
+        
+
+
+instructiuni: start_instr statements end_instr
+            | start_instr end_instr
+            ;
+    
+statements: statements statement
+        | statement  
+        ;
+        
+statement: if_stat  
+        | for_stat
+        | while_stat
+        | assign pnctvir
+        | val_struct pnctvir
+        | RETURN expr pnctvir {char buff[50]=""; sprintf(buff,"Programul a returnat: %d\n",$2);strcat(toPrint,buff);}
+        | function pnctvir
+        | PRINT pnctvir
+        | EVAL_stat pnctvir
+        | STR_stat pnctvir
+        ;
+
+EVAL_stat: EVAL sprnt expr dprnt {char buff[50]=""; sprintf(buff,"%d\n",$3); strcat(toPrint,buff);}
+
+STR_stat: STRCMP sprnt ID vir ID dprnt {check_existence($3);check_existence($5);}
+        | STRSTR sprnt ID vir ID dprnt {check_existence($3);check_existence($5);}
+        | STRLEN sprnt ID dprnt {check_existence($3);}
+        | STRCAT sprnt ID vir ID dprnt {check_existence($3);check_existence($5);}
+
+    
+val_struct:ID pnct ID ASSIGN expr {check_struct($1,1); check_struct($3,2); updateVal($3,$5);}
+        ; 
+        
+PRINT: print sprnt INT vir expr dprnt {char buff[50]=""; sprintf(buff,"%d\n",$5); strcat(toPrint,buff);}
+        | print sprnt CHAR vir expr dprnt {char buff[50]=""; sprintf(buff,"%c\n",$5);strcat(toPrint,buff);}
+        | print sprnt FLOAT vir expr dprnt {char buff[50]=""; sprintf(buff,"%d\n",$5);strcat(toPrint,buff);}
+        | print sprnt BOOL vir expr dprnt {char buff[50]=""; sprintf(buff,"%d\n",$5);strcat(toPrint,buff);}
+        ;
+      
+function: ID sprnt argum dprnt
+    ;
+    
+argum: expr 
+    | argum vir expr
+    | 
+    ;
+    
+if_stat: IF sprnt expr dprnt bloc_stat %prec IFX 
+       | IF sprnt expr dprnt bloc_stat ELSE bloc_stat
+       ;
+
+for_stat: FOR sprnt assign vir expr vir assign dprnt bloc_stat 
+    ;
+    
+while_stat: WHILE sprnt expr dprnt bloc_stat 
+    ;
+
+bloc_stat: statement 
+    | sacoal statements dacoal 
+    ;
+
+expr: expr pls expr {$$=$1+$3; }
+    | expr min expr {$$=$1-$3; }
+    | expr slsh expr {$$=$1/$3; }
+    | expr ori expr {$$=$1*$3; }
+    | expr mod expr {$$=$1%$3; }
+    | expr EQ expr {$$=$1==$3; }
+    | expr NEQ expr {$$=$1!=$3; }
+    | expr LEQ expr {$$=$1<=$3; }
+    | expr GEQ expr {$$=$1>=$3; }
+    | expr LES expr {$$=$1<$3; }
+    | expr GRE expr {$$=$1>$3; }
+    | expr AND expr {$$=$1 && $3; }
+    | expr OR expr {$$=$1 || $3; }
+    | sprnt expr dprnt {$$=$2;}
+    | expr3 {$$=$1;}
+    ;
+    
+    
+expr3:ID {check_existence($1); $$=getVal($1);}
+    | sign ID {check_existence($2); $$=-getVal($2);}
+    | ID pnct ID { check_struct($1,1); check_struct($3,2); $$=getVal($3);} 
+    | vect {check_existence($1);}
+    | matr {check_existence($1);}
+    | INTEGER_VAL { $$=$1;}
+    | FLT_VAL { $$=$1; }
+    | CHAR_VAL { $$=$1; }
+    | BOOL_VAL { $$=$1; }
+    ;
+        
+sign: min 
+    ; 
+
+assign: ID ASSIGN expr {check_existence($1); updateVal($1,$3); }
+    | matr ASSIGN expr {check_existence($1);}
+    | vect ASSIGN expr {check_existence($1);}
+    ;
+    
+%%
+
+
+int yyerror(char * s){
+    printf("EROARE!: %s a aparut la linia:%d\n",s,yylineno);
+}
+
+int main(int argc, char** argv){
+    if(argc>0)
+    yyin=fopen(argv[1],"r");
+    yyparse();
+} 
