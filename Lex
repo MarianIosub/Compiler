@@ -1,0 +1,72 @@
+%{
+#include <stdio.h>
+#include <string.h>
+#include "y.tab.h"
+%}
+%option noyywrap
+%%
+
+"start_decl" { return start_decl;}
+"end_decl" { return end_decl;}
+
+"INTEGER" { return INT;}
+"CHR" { return CHAR;}
+"FLT" { return FLOAT;}
+"BL" { return BOOL;}
+"CONST" { return CONST;}
+
+"STRUCT" { return STRUCT;}
+"start_instr" { return start_instr;}
+"end_instr" { return end_instr;}
+
+"PRINT" { return print;}
+"FOR" { return FOR;}
+"IF" { return IF;}
+"ELSE" { return ELSE;}
+"WHILE" { return WHILE;}
+"RETURN" { return RETURN;}
+"EVAL" {return EVAL;}
+"STRCMP" {return STRCMP;}
+"STRSTR" {return STRSTR;}
+"STRLEN" {return STRLEN;}
+"STRCAT" {return STRCAT;}
+
+"TRUE"|"FALSE" { yylval.val=atoi(yytext); return BOOL_VAL;}
+\'[\^\-\\!@#$%^&*()+~`?=_{};:'"|/.,><a-zA-Z0-9]\' { yylval.val=yytext[1]; return CHAR_VAL;}
+[0-9]+ { yylval.val=atoi(yytext); return INTEGER_VAL;}
+[0-9]*\.?[0-9]+ { yylval.val=atoi(yytext); return FLT_VAL;}
+
+
+[A-Za-z]+[a-zA-Z0-9_]* { yylval.nume=strdup(yytext); return ID;}
+[A-Za-z]+[a-zA-Z0-9_]*"["[0-9]*"]""["[0-9]*"]" {{ yylval.nume=strdup(yytext); return matr;}}
+[A-Za-z]+[a-zA-Z0-9_]*"["[0-9]*"]" {{ yylval.nume=strdup(yytext); return vect;}}
+
+"+" {return pls;}
+"-" { return min;}
+"*" { return ori;}
+"\\" { return slsh;}
+"%" { return mod;}
+"&&" { return AND;}
+"||" { return OR;}
+"=" { return EQ;}
+"!=" { return NEQ;}
+">"  { return GRE;}
+"<"  { return LES;}
+">=" { return GEQ;}
+"<=" { return LEQ;}
+":=" { return ASSIGN;}
+"!" { return NOT;}
+"(" { return sprnt;}
+")" { return dprnt;}
+"{" { return sacoal;}
+"}" { return dacoal;}
+"." { return pnct;}
+"," { return vir;}
+"#" { return pnctvir;}
+
+[ \t] ;
+\n {yylineno++;}
+. {printf("%s \n",yytext); return yytext[0];}
+
+%%
+
