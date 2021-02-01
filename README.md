@@ -1,5 +1,5 @@
 # Compiler
-Lex/Yacc Compiler
+
 Here you have a Lex/Yacc Compiler for a personal programming language made for a project for Faculty.
 To can run the project you need to run the followings in the terminal:
 
